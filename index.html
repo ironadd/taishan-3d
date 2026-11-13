@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>岱岳雄魂 · 泰山 3D 全景交互数字山水 | Mount Tai</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;500;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="canvas-container"></div>
+
+    <!-- 3D 空间悬浮地标铭牌层 -->
+    <div id="poi-layer"></div>
+
+    <!-- 开屏东方水墨金石加载界面 -->
+    <div id="loading-screen">
+      <div class="loading-inner">
+        <div class="seal-badge">五嶽獨尊</div>
+        <h1 class="loading-title">泰 山</h1>
+        <p class="loading-poem">岱宗夫如何 · 齊魯青未了<br />造化鍾神秀 · 陰陽割昏曉</p>
+        <div class="loading-bar-wrap">
+          <div id="loading-bar" class="loading-bar"></div>
+        </div>
+        <p id="loading-status" class="loading-status">正在雕琢太古片麻岩與十八盤天梯…</p>
+      </div>
+    </div>
+
+    <!-- 顶部标题与状态栏 -->
+    <header id="hud-header" class="hud-element">
+      <div class="brand-block">
+        <div class="seal-mini">岱宗</div>
+        <div class="brand-text">
+          <h1>泰山 · 岱頂勝境</h1>
+          <span id="current-spot-subtitle">旭日東昇 · 雲海玉盤 · 海拔 1545 米</span>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <button id="btn-tour" class="action-pill primary-pill" title="沿十八盘拾级而上直抵玉皇顶">
+          <span class="pill-icon">⛰</span>
+          <span id="tour-label">自動登岱巡禮</span>
+        </button>
+        <button id="btn-walk" class="action-pill" title="切换第一人称徒步漫游 (WASD)">
+          <span class="pill-icon">🚶</span>
+          <span id="walk-label">徒步漫遊</span>
+        </button>
+        <button id="btn-poi-toggle" class="action-pill active" title="显示或隐藏山间名胜诗词铭牌">
+          <span class="pill-icon">碑</span>
+          <span>勝蹟銘牌</span>
+        </button>
+        <button id="btn-audio" class="action-pill" title="开启或关闭高山松涛与古刹钟声">
+          <span class="pill-icon" id="audio-icon">🔇</span>
+          <span id="audio-label">松濤晨鐘</span>
+        </button>
+        <button id="btn-hide-ui" class="action-pill icon-only" title="隐藏界面纯享摄影 (快捷键 H)">
+          <span>⛶</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 右侧天象与造境控制面板 -->
+    <aside id="hud-controls" class="hud-element">
+      <div class="panel-header">
+        <span>天象與雲海</span>
+        <button id="btn-collapse-panel" title="折叠面板">−</button>
+      </div>
+      <div id="panel-body" class="panel-body">
+        <div class="preset-grid">
+          <button class="time-preset active" data-preset="sunrise">旭日東昇</button>
+          <button class="time-preset" data-preset="noon">晴晝雲海</button>
+          <button class="time-preset" data-preset="sunset">晚霞鎏金</button>
+          <button class="time-preset" data-preset="night">星河夜爬</button>
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>時辰日照</span>
+            <strong id="val-time">06:36 · 卯時日出</strong>
+          </div>
+          <input id="slider-time" type="range" min="0" max="24" step="0.05" value="6.6" />
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>雲海高度</span>
+            <strong id="val-cloud-height">1150 m</strong>
+          </div>
+          <input id="slider-cloud-height" type="range" min="24" max="75" step="0.5" value="42" />
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>雲濤濃度</span>
+            <strong id="val-cloud-density">85%</strong>
+          </div>
+          <input id="slider-cloud-density" type="range" min="0" max="1.2" step="0.02" value="0.88" />
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>山嵐霧氣</span>
+            <strong id="val-mist">65%</strong>
+          </div>
+          <input id="slider-mist" type="range" min="0" max="1.2" step="0.02" value="0.65" />
+        </div>
+      </div>
+    </aside>
+
+    <!-- 左侧当前景点文化考据卡片 -->
+    <section id="spot-card" class="hud-element">
+      <div class="spot-card-tag" id="spot-elevation">海拔約 1460 米</div>
+      <h2 id="spot-title">南天門 · 摩空閣</h2>
+      <p id="spot-verse" class="spot-verse">「門闢九霄，仰步三天勝蹟；階崇萬級，俯臨千嶂奇觀。」</p>
+      <p id="spot-desc" class="spot-desc">
+        十八盤盡頭之咽喉要道，嵌於飛龍巖與翔鳳嶺山口。下築條石拱券門洞，上建朱牆黃琉璃重檐歇山頂摩空閣，穿門即入天上街市。
+      </p>
+    </section>
+
+    <!-- 徒步漫游提示条 -->
+    <div id="walk-hint" class="walk-hint hidden">
+      <span><strong>WASD / 方向鍵</strong> 前後左右移動 · <strong>拖拽鼠標</strong> 環顧四周 · <strong>Shift</strong> 疾行 · <strong>Space</strong> 躍起 · 按 <strong>ESC</strong> 返回雲端視角</span>
+    </div>
+
+    <!-- 纯享模式唤醒按钮 -->
+    <button id="btn-restore-ui" class="restore-ui-btn hidden" title="恢复显示界面 (H)">
+      顯示界面 (H)
+    </button>
+
+    <!-- 底部九大胜景快速导览卷轴栏 -->
+    <nav id="hud-dock" class="hud-element">
+      <div class="dock-scroll">
+        <button class="dock-btn active" data-camera="overview">
+          <span class="dock-num">壹</span>
+          <span class="dock-name">岱嶽全覽</span>
+        </button>
+        <button class="dock-btn" data-camera="shibapan">
+          <span class="dock-num">貳</span>
+          <span class="dock-name">十八盤天梯</span>
+        </button>
+        <button class="dock-btn" data-camera="nantianmen">
+          <span class="dock-num">叁</span>
+          <span class="dock-name">南天門摩空</span>
+        </button>
+        <button class="dock-btn" data-camera="xianrenqiao">
+          <span class="dock-num">肆</span>
+          <span class="dock-name">仙人橋奇石</span>
+        </button>
+        <button class="dock-btn" data-camera="tianjie">
+          <span class="dock-num">伍</span>
+          <span class="dock-name">天街盤龍坊</span>
+        </button>
+        <button class="dock-btn" data-camera="bixiaci">
+          <span class="dock-num">陸</span>
+          <span class="dock-name">碧霞金闕</span>
+        </button>
+        <button class="dock-btn" data-camera="tangmoya">
+          <span class="dock-num">柒</span>
+          <span class="dock-name">唐摩崖大觀</span>
+        </button>
+        <button class="dock-btn" data-camera="wuyueduzun">
+          <span class="dock-num">捌</span>
+          <span class="dock-name">五嶽獨尊</span>
+        </button>
+        <button class="dock-btn" data-camera="yuhuangding">
+          <span class="dock-num">玖</span>
+          <span class="dock-name">玉皇極頂</span>
+        </button>
+        <button class="dock-btn" data-camera="gongbeishi">
+          <span class="dock-num">拾</span>
+          <span class="dock-name">拱北觀日</span>
+        </button>
+      </div>
+    </nav>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
